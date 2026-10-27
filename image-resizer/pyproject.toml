@@ -1,0 +1,9 @@
+[project]
+name = "image-resizer"
+version = "1.0.0"
+description = "Resize and convert images using Pillow."
+requires-python = ">=3.9"
+dependencies = ["Pillow>=9.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
