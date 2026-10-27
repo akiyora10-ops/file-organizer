@@ -1,0 +1,8 @@
+[project]
+name = "file-organizer"
+version = "1.0.0"
+description = "Organize files into folders by extension or date; find duplicates."
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
