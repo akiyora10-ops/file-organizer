@@ -1,0 +1,8 @@
+[project]
+name = "todo-cli"
+version = "1.0.0"
+description = "SQLite-backed command-line todo list."
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
