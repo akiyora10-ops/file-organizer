@@ -1,0 +1,8 @@
+[project]
+name = "md-to-html"
+version = "1.0.0"
+description = "Minimal Markdown to HTML converter."
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
