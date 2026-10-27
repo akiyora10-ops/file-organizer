@@ -1,0 +1,8 @@
+[project]
+name = "json-csv-converter"
+version = "1.0.0"
+description = "Convert between JSON and CSV."
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
