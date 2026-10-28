@@ -52,6 +52,13 @@ class GameOptimizerTUI(App):
             with TabPane("Boost", id="boost"):
                 yield Button("BOOST NOW", id="boost_btn")
                 yield Static("", id="boost_result")
+            with TabPane("Network", id="net"):
+                yield Button("Flush DNS", id="net_flush")
+                yield Button("Ping", id="net_ping")
+                yield Static("", id="net_result")
+            with TabPane("Cleanup", id="clean"):
+                yield Button("Clean Caches", id="clean_btn")
+                yield Static("", id="clean_result")
             with TabPane("Tweaks", id="tweaks"):
                 yield Button("Apply System Tweaks", id="tweaks_btn")
                 yield Static("", id="tweaks_result")
@@ -133,8 +140,17 @@ class GameOptimizerTUI(App):
             )
         elif bid == "boost_btn":
             res = boost_pc()
-            self.query_one("#boost_result", Static).update("\n".join(res))
+            self.query_one("#boost_result", Static).update("\\n".join(res))
             self._refresh_procs()
+        elif bid == "net_flush":
+            from core.network import flush_dns
+            self.query_one("#net_result", Static).update(flush_dns())
+        elif bid == "net_ping":
+            from core.network import ping
+            self.query_one("#net_result", Static).update(ping())
+        elif bid == "clean_btn":
+            from core.cleanup import clean_caches
+            self.query_one("#clean_result", Static).update("\\n".join(clean_caches()))
         elif bid == "tweaks_btn":
             res = apply_system_tweaks()
             self.query_one("#tweaks_result", Static).update("\n".join(res))

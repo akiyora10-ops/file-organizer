@@ -30,13 +30,15 @@ class App(ctk.CTk):
     def _build(self):
         self.tabs = ctk.CTkTabview(self)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
-        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "System Tweaks", "Settings"):
+        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "Network", "Cleanup", "System Tweaks", "Settings"):
             self.tabs.add(name)
         self._games_tab()
         self._processes_tab()
         self._optimize_tab()
         self._monitor_tab()
         self._boost_tab()
+        self._network_tab()
+        self._cleanup_tab()
         self._tweaks_tab()
         self._settings_tab()
 
@@ -224,6 +226,34 @@ class App(ctk.CTk):
         self._auto = self.settings["auto_boost"]
         import tkinter.messagebox as mb
         mb.showinfo("Saved", "Settings saved.")
+
+    # ---- Network ----
+    def _network_tab(self):
+        from core.network import flush_dns, reset_winsock, ping
+        f = self.tabs.tab("Network")
+        ctk.CTkButton(f, text="Flush DNS", command=lambda: self._net_result(flush_dns())).pack(pady=5)
+        ctk.CTkButton(f, text="Reset Winsock", command=lambda: self._net_result(reset_winsock())).pack(pady=5)
+        ctk.CTkButton(f, text="Ping 8.8.8.8", command=lambda: self._net_result(ping())).pack(pady=5)
+        self.net_box = ctk.CTkTextbox(f, width=900, height=300)
+        self.net_box.pack(padx=10, pady=10)
+
+    def _net_result(self, text):
+        self.net_box.delete("1.0", "end")
+        self.net_box.insert("end", text + "\n")
+
+    # ---- Cleanup ----
+    def _cleanup_tab(self):
+        from core.cleanup import clean_caches, clean_steam_shader_cache
+        f = self.tabs.tab("Cleanup")
+        ctk.CTkButton(f, text="Clean Caches", command=lambda: self._clean_result(clean_caches())).pack(pady=5)
+        ctk.CTkButton(f, text="Clean Steam Shader Cache", command=lambda: self._clean_result(clean_steam_shader_cache("E:\\steam"))).pack(pady=5)
+        self.clean_box = ctk.CTkTextbox(f, width=900, height=300)
+        self.clean_box.pack(padx=10, pady=10)
+
+    def _clean_result(self, res):
+        self.clean_box.delete("1.0", "end")
+        for r in (res if isinstance(res, list) else [res]):
+            self.clean_box.insert("end", r + "\n")
 
     # ---- System Tweaks ----
     def _tweaks_tab(self):
