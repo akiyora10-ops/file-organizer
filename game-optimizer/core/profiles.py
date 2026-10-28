@@ -1,35 +1,87 @@
-"""Per-game optimization profiles."""
+"""Per-game optimization profiles and system tweaks."""
 
 from __future__ import annotations
 
 PROFILES = {
     "Counter-Strike 2": {
-        "launch_options": "-novid -high -threads 8 +fps_max 0",
-        "config_edits": {"mat_queue_mode": "2", "cl_forcepreload": "1"},
-        "kill_processes": ["chrome.exe", "discord.exe"],
+        "launch_options": "-novid -high -threads 8 +fps_max 0 -nojoy",
+        "kill_processes": ["chrome.exe", "discord.exe", "spotify.exe"],
         "priority": "high",
+        "affinity_all": True,
+        "config_edits": {"mat_queue_mode": "2", "cl_forcepreload": "1", "r_dynamic": "0"},
     },
     "Valorant": {
         "launch_options": "-high",
-        "config_edits": {},
-        "kill_processes": ["chrome.exe"],
+        "kill_processes": ["chrome.exe", "discord.exe"],
         "priority": "high",
+        "affinity_all": True,
+        "config_edits": {},
     },
     "Fortnite": {
         "launch_options": "-high -USEALLAVAILABLECORES",
-        "config_edits": {},
-        "kill_processes": ["chrome.exe", "spotify.exe"],
+        "kill_processes": ["chrome.exe", "spotify.exe", "epicgameslauncher.exe"],
         "priority": "high",
+        "affinity_all": True,
+        "config_edits": {},
+    },
+    "Apex Legends": {
+        "launch_options": "+mat_letterboxaspectgoal 0 -high",
+        "kill_processes": ["chrome.exe", "origin.exe"],
+        "priority": "high",
+        "affinity_all": True,
+        "config_edits": {},
+    },
+    "Call of Duty": {
+        "launch_options": "",
+        "kill_processes": ["chrome.exe", "battle.net.exe"],
+        "priority": "high",
+        "affinity_all": True,
+        "config_edits": {},
+    },
+    "Minecraft": {
+        "launch_options": "-Xmx4G -Xms4G",
+        "kill_processes": ["chrome.exe"],
+        "priority": "abovenormal",
+        "affinity_all": False,
+        "config_edits": {},
+    },
+    "Roblox": {
+        "launch_options": "",
+        "kill_processes": ["chrome.exe"],
+        "priority": "high",
+        "affinity_all": True,
+        "config_edits": {},
     },
 }
 
 
 def get_profile(name: str) -> dict:
     for key, prof in PROFILES.items():
-        if key.lower() in name.lower() or name.lower() in key.lower():
+        if key.lower() in (name or "").lower() or (name or "").lower() in key.lower():
             return prof
-    return {"launch_options": "", "config_edits": {}, "kill_processes": [], "priority": "high"}
+    return {"launch_options": "", "kill_processes": [], "priority": "high",
+            "affinity_all": True, "config_edits": {}}
 
 
 def list_profiles() -> list[str]:
     return list(PROFILES.keys())
+
+
+SYSTEM_TWEAKS = [
+    ("Set High Performance power plan", "powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"),
+    ("Disable Game DVR", 'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f'),
+    ("Disable fullscreen optimizations (global)", 'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f'),
+]
+
+
+def apply_system_tweaks() -> list[str]:
+    import subprocess
+    results = []
+    for label, cmd in SYSTEM_TWEAKS:
+        try:
+            subprocess.run(cmd, shell=True, check=True, capture_output=True)
+            results.append(f"OK: {label}")
+        except Exception as e:
+            results.append(f"FAIL: {label} ({e})")
+    return results
+
