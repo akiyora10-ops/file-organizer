@@ -1,13 +1,28 @@
-# Game Optimizer
+# Game Optimizer Pro
 
-Desktop app to detect games, manage processes, apply per-game optimization profiles, and monitor performance.
+Desktop (CustomTkinter) + Terminal (Textual) game optimizer.
 
-## Run
-``bash
+## Features
+- Detect Steam/Epic games
+- Process manager with kill/priority
+- Per-game optimization profiles
+- One-click PC boost
+- System tweaks (power plan, Game DVR)
+- Live CPU/GPU/RAM monitoring
+- Auto-optimize on game launch
+
+## Run GUI
+```bash
 python main.py
-``n
+```
+
+## Run TUI
+```bash
+python main.py --tui
+```
+
 ## Tests
-``bash
+```bash
 pip install pytest
 pytest
-``n
+```

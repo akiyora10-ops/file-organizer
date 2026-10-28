@@ -24,6 +24,8 @@ class App(ctk.CTk):
         self.geometry("1100x700")
         self.games = []
         self._build()
+        self._auto = True
+        threading.Thread(target=self._auto_watch, daemon=True).start()
 
     def _build(self):
         self.tabs = ctk.CTkTabview(self)
@@ -42,7 +44,26 @@ class App(ctk.CTk):
         f = self.tabs.tab("Games")
         self.games_box = ctk.CTkTextbox(f, width=900, height=400)
         self.games_box.pack(padx=10, pady=10)
-        ctk.CTkButton(f, text="Detect Games", command=self.detect_games).pack()
+        row = ctk.CTkFrame(f)
+        row.pack(pady=5)
+        ctk.CTkButton(row, text="Detect Games", command=self.detect_games).pack(side="left", padx=5)
+        ctk.CTkButton(row, text="Launch Selected (Steam)", command=self.launch_selected).pack(side="left", padx=5)
+
+    def launch_selected(self):
+        import subprocess, webbrowser
+        sel = self.games_box.get("insert linestart", "insert lineend") if False else None
+        # launch first game with appid
+        if not self.games:
+            return
+        # find appid from selected? use first
+        g = self.games[0]
+        appid = g.get("appid")
+        if appid:
+            webbrowser.open(f"steam://run/{appid}")
+        else:
+            path = g.get("install_path")
+            if path and __import__("os").path.exists(path):
+                subprocess.Popen(path)
         self.detect_games()
 
     def detect_games(self):
@@ -143,9 +164,15 @@ class App(ctk.CTk):
         self.running_label = ctk.CTkLabel(f, text="None")
         self.running_label.pack()
         ctk.CTkButton(f, text="Refresh Running Games", command=self.refresh_running).pack(pady=5)
+        self.auto_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(f, text="Auto-optimize when game launches", variable=self.auto_var,
+                        command=self._toggle_auto).pack(pady=5)
         self.boost_box = ctk.CTkTextbox(f, width=900, height=300)
         self.boost_box.pack(padx=10, pady=10)
         self.refresh_running()
+
+    def _toggle_auto(self):
+        self._auto = self.auto_var.get()
 
     def refresh_running(self):
         from core.profiles import running_games
@@ -176,6 +203,30 @@ class App(ctk.CTk):
         for r in results:
             self.tweaks_box.insert("end", r + "\n")
 
+
+    def _auto_watch(self):
+        import time
+        from core.profiles import running_games, get_profile
+        from core.process_manager import kill_process, set_priority
+        seen = set()
+        while True:
+            if not getattr(self, "_auto", True):
+                time.sleep(2)
+                continue
+            try:
+                rg = running_games()
+                for g in rg:
+                    if g not in seen:
+                        seen.add(g)
+                        prof = get_profile(g)
+                        for proc in prof.get("kill_processes", []):
+                            kill_process(proc)
+                        set_priority(g + ".exe", prof.get("priority", "high"))
+                        # notify via title
+                        self.title(f"Game Optimizer Pro - Optimized {g}")
+            except Exception:
+                pass
+            time.sleep(5)
 
 def main():
     App().mainloop()
