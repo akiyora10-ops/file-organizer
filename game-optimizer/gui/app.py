@@ -30,7 +30,7 @@ class App(ctk.CTk):
     def _build(self):
         self.tabs = ctk.CTkTabview(self)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
-        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "Network", "Cleanup", "Config Editor", "System Tweaks", "Settings"):
+        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "Network", "Cleanup", "Config Editor", "Launcher", "System Tweaks", "Settings"):
             self.tabs.add(name)
         self._games_tab()
         self._processes_tab()
@@ -40,6 +40,7 @@ class App(ctk.CTk):
         self._network_tab()
         self._cleanup_tab()
         self._config_tab()
+        self._launcher_tab()
         self._tweaks_tab()
         self._settings_tab()
 
@@ -156,13 +157,39 @@ class App(ctk.CTk):
         self.gpu_label = ctk.CTkLabel(f, text="", font=ctk.CTkFont(size=14))
         self.gpu_label.pack(pady=5)
         ctk.CTkButton(f, text="Start Live Monitor", command=self.start_monitor).pack(pady=10)
+        ctk.CTkButton(f, text="Toggle FPS Overlay", command=self.toggle_overlay).pack(pady=5)
         self._monitoring = False
+        self._overlay = None
 
     def start_monitor(self):
         if self._monitoring:
             return
         self._monitoring = True
         threading.Thread(target=self._monitor_loop, daemon=True).start()
+
+    def toggle_overlay(self):
+        if self._overlay is None:
+            self._overlay = ctk.CTkToplevel(self)
+            self._overlay.title("Overlay")
+            self._overlay.geometry("260x80+10+10")
+            self._overlay.attributes("-topmost", True)
+            self.overlay_label = ctk.CTkLabel(self._overlay, text="Overlay")
+            self.overlay_label.pack(pady=10)
+            threading.Thread(target=self._overlay_loop, daemon=True).start()
+        else:
+            self._overlay.destroy()
+            self._overlay = None
+
+    def _overlay_loop(self):
+        while self._overlay is not None:
+            try:
+                from core.benchmark import system_snapshot
+                snap = system_snapshot()
+                mem = snap["mem"]
+                self.overlay_label.configure(text=f"CPU {snap['cpu']:.0f}% | RAM {mem['percent']}% | GPU {snap['gpu']['util']}%")
+            except Exception:
+                pass
+            time.sleep(1)
 
     def _monitor_loop(self):
         while self._monitoring:
@@ -298,6 +325,35 @@ class App(ctk.CTk):
         p.write_text(self.cfg_box.get("1.0", "end"))
         import tkinter.messagebox as mb
         mb.showinfo("Saved", str(p))
+
+    # ---- Launcher ----
+    def _launcher_tab(self):
+        f = self.tabs.tab("Launcher")
+        self.launch_list = ctk.CTkTextbox(f, width=900, height=300)
+        self.launch_list.pack(padx=10, pady=10)
+        ctk.CTkButton(f, text="Refresh Games", command=self.refresh_launcher).pack(pady=5)
+        ctk.CTkButton(f, text="Launch First Game", command=self.launch_first).pack(pady=5)
+        self.refresh_launcher()
+
+    def refresh_launcher(self):
+        from core.detector import detect_all
+        self._launch_games = detect_all()
+        self.launch_list.delete("1.0", "end")
+        for g in self._launch_games:
+            self.launch_list.insert("end", f"{g.get('name')} [{g.get('platform')}] appid={g.get('appid')}\n")
+
+    def launch_first(self):
+        import webbrowser, os, subprocess
+        if not getattr(self, "_launch_games", None):
+            return
+        g = self._launch_games[0]
+        appid = g.get("appid")
+        if appid:
+            webbrowser.open(f"steam://run/{appid}")
+        else:
+            path = g.get("install_path")
+            if path and os.path.exists(path):
+                subprocess.Popen(path)
 
     # ---- System Tweaks ----
     def _tweaks_tab(self):
