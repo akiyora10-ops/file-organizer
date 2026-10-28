@@ -85,3 +85,27 @@ def apply_system_tweaks() -> list[str]:
             results.append(f"FAIL: {label} ({e})")
     return results
 
+GAME_PROCESSES = {
+    "cs2.exe": "Counter-Strike 2",
+    "valorant.exe": "Valorant",
+    "valorant-win64-shipping.exe": "Valorant",
+    "fortniteclient-win64-shipping.exe": "Fortnite",
+    "r5apex.exe": "Apex Legends",
+    "cod.exe": "Call of Duty",
+    "minecraft.exe": "Minecraft",
+    "javaw.exe": "Minecraft",
+    "robloxplayerbeta.exe": "Roblox",
+}
+
+
+def running_games() -> list[str]:
+    import psutil
+    found = []
+    for proc in psutil.process_iter(["name"]):
+        try:
+            name = (proc.info["name"] or "").lower()
+            if name in GAME_PROCESSES and GAME_PROCESSES[name] not in found:
+                found.append(GAME_PROCESSES[name])
+        except Exception:
+            continue
+    return found

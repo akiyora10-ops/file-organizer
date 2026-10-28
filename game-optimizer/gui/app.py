@@ -28,12 +28,13 @@ class App(ctk.CTk):
     def _build(self):
         self.tabs = ctk.CTkTabview(self)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
-        for name in ("Games", "Processes", "Optimize", "Monitor", "System Tweaks"):
+        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "System Tweaks"):
             self.tabs.add(name)
         self._games_tab()
         self._processes_tab()
         self._optimize_tab()
         self._monitor_tab()
+        self._boost_tab()
         self._tweaks_tab()
 
     # ---- Games ----
@@ -49,9 +50,12 @@ class App(ctk.CTk):
         self.games_box.delete("1.0", "end")
         if not self.games:
             self.games_box.insert("end", "No games detected.\n")
-            return
-        for g in self.games:
-            self.games_box.insert("end", f"{g.get('name')}  [{g.get('platform')}]  {g.get('install_path','')}\n")
+        else:
+            for g in self.games:
+                self.games_box.insert("end", f"{g.get('name')}  [{g.get('platform')}]  {g.get('install_path','')}\n")
+        from core.profiles import running_games
+        rg = running_games()
+        self.games_box.insert("end", f"\nRunning games: {', '.join(rg) if rg else 'None'}\n")
 
     # ---- Processes ----
     def _processes_tab(self):
@@ -129,6 +133,34 @@ class App(ctk.CTk):
             self.monitor_label.configure(text=text)
             self.gpu_label.configure(text=gpu_text)
             time.sleep(1)
+
+    # ---- Boost PC ----
+    def _boost_tab(self):
+        f = self.tabs.tab("Boost PC")
+        ctk.CTkLabel(f, text="One-click PC boost for gaming", font=ctk.CTkFont(size=18)).pack(pady=10)
+        ctk.CTkButton(f, text="BOOST NOW", command=self.boost_now, height=50, width=300).pack(pady=10)
+        ctk.CTkLabel(f, text="Running games detected:").pack(pady=5)
+        self.running_label = ctk.CTkLabel(f, text="None")
+        self.running_label.pack()
+        ctk.CTkButton(f, text="Refresh Running Games", command=self.refresh_running).pack(pady=5)
+        self.boost_box = ctk.CTkTextbox(f, width=900, height=300)
+        self.boost_box.pack(padx=10, pady=10)
+        self.refresh_running()
+
+    def refresh_running(self):
+        from core.profiles import running_games
+        games = running_games()
+        self.running_label.configure(text=", ".join(games) if games else "None")
+
+    def boost_now(self):
+        from core.process_manager import boost_pc
+        results = boost_pc()
+        self.boost_box.delete("1.0", "end")
+        for r in results:
+            self.boost_box.insert("end", r + "\n")
+        self.boost_box.insert("end", "\nBoost complete.\n")
+        self.refresh_procs()
+        self.refresh_running()
 
     # ---- System Tweaks ----
     def _tweaks_tab(self):
