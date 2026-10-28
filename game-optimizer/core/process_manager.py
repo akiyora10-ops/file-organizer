@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import psutil
+from pathlib import Path
 from typing import Iterable
 
 
@@ -98,4 +99,21 @@ def boost_pc() -> list[str]:
         results.append("Trimmed working sets")
     except Exception:
         pass
+    # Temp cleanup
+    try:
+        import tempfile, shutil, glob
+        temp = tempfile.gettempdir()
+        removed = 0
+        for p in Path(temp).glob("*"):
+            try:
+                if p.is_file() or p.is_symlink():
+                    p.unlink()
+                elif p.is_dir():
+                    shutil.rmtree(p, ignore_errors=True)
+                removed += 1
+            except Exception:
+                pass
+        results.append(f"Cleaned temp ({removed} items)")
+    except Exception as e:
+        results.append(f"Temp cleanup failed: {e}")
     return results

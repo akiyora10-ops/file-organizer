@@ -101,8 +101,9 @@ class GameOptimizerTUI(App):
         snap = system_snapshot()
         mem = snap["mem"]
         gpu = snap["gpu"]
+        net = snap["net"]
         self.query_one("#mon_stats", Static).update(
-            f"CPU: {snap['cpu']:.1f}%\nRAM: {mem['used_gb']}/{mem['total_gb']} GB ({mem['percent']}%)\nDisk: {snap['disk']['used_gb']}/{snap['disk']['total_gb']} GB"
+            f"CPU: {snap['cpu']:.1f}%\nRAM: {mem['used_gb']}/{mem['total_gb']} GB ({mem['percent']}%)\nDisk: {snap['disk']['used_gb']}/{snap['disk']['total_gb']} GB\nNet: sent {net['sent_mb']}MB recv {net['recv_mb']}MB"
         )
         self.query_one("#mon_gpu", Static).update(
             f"GPU: {gpu['name']}\nUtilization: {gpu['util']}%\nVRAM: {gpu['mem_used']}/{gpu['mem_total']} MB\nTemp: {gpu['temp']} C"

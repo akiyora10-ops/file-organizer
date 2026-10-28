@@ -148,8 +148,10 @@ class App(ctk.CTk):
             cpu = snap["cpu"]
             mem = snap["mem"]
             gpu = snap["gpu"]
+            net = snap["net"]
             text = (f"CPU: {cpu:.1f}% ({snap['cpu_count']} cores)   |   "
-                    f"RAM: {mem['used_gb']}/{mem['total_gb']} GB ({mem['percent']}%)")
+                    f"RAM: {mem['used_gb']}/{mem['total_gb']} GB ({mem['percent']}%)   |   "
+                    f"Net: {net['sent_mb']}/{net['recv_mb']} MB")
             gpu_text = f"GPU: {gpu['name']}  Util: {gpu['util']}%  VRAM: {gpu['mem_used']}/{gpu['mem_total']} MB  Temp: {gpu['temp']}C"
             self.monitor_label.configure(text=text)
             self.gpu_label.configure(text=gpu_text)

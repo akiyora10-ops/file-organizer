@@ -40,6 +40,12 @@ def disk_usage(path: str = "C:\\") -> dict:
             "percent": u.percent}
 
 
+def network_usage() -> dict:
+    io = psutil.net_io_counters()
+    return {"sent_mb": round(io.bytes_sent / 1024**2, 1),
+            "recv_mb": round(io.bytes_recv / 1024**2, 1)}
+
+
 def system_snapshot() -> dict:
     return {
         "cpu": cpu_usage(),
@@ -47,6 +53,7 @@ def system_snapshot() -> dict:
         "mem": memory_usage(),
         "gpu": gpu_usage(),
         "disk": disk_usage(),
+        "net": network_usage(),
     }
 
 
