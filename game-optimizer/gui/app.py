@@ -30,7 +30,7 @@ class App(ctk.CTk):
     def _build(self):
         self.tabs = ctk.CTkTabview(self)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
-        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "Network", "Cleanup", "System Tweaks", "Settings"):
+        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "Network", "Cleanup", "Config Editor", "System Tweaks", "Settings"):
             self.tabs.add(name)
         self._games_tab()
         self._processes_tab()
@@ -39,6 +39,7 @@ class App(ctk.CTk):
         self._boost_tab()
         self._network_tab()
         self._cleanup_tab()
+        self._config_tab()
         self._tweaks_tab()
         self._settings_tab()
 
@@ -90,6 +91,7 @@ class App(ctk.CTk):
         row.pack(pady=5)
         ctk.CTkButton(row, text="Refresh", command=self.refresh_procs).pack(side="left", padx=5)
         ctk.CTkButton(row, text="Kill Top Memory", command=self.kill_top).pack(side="left", padx=5)
+        ctk.CTkButton(row, text="Set Affinity", command=self.set_affinity_dialog).pack(side="left", padx=5)
         self.refresh_procs()
 
     def refresh_procs(self):
@@ -102,6 +104,23 @@ class App(ctk.CTk):
         if procs:
             kill_process(procs[0]["name"])
             self.refresh_procs()
+
+    def set_affinity_dialog(self):
+        from tkinter import simpledialog
+        from core.process_manager import set_affinity
+        pid = simpledialog.askinteger("PID", "Enter PID:")
+        if pid is None:
+            return
+        mask = simpledialog.askinteger("Mask", "CPU affinity mask (e.g. 255 for all 8 cores):", initialvalue=255)
+        if mask is None:
+            return
+        cpus = [i for i in range(8) if mask & (1 << i)]
+        if set_affinity(pid, cpus):
+            import tkinter.messagebox as mb
+            mb.showinfo("Done", f"Set affinity for {pid} to cores {cpus}")
+        else:
+            import tkinter.messagebox as mb
+            mb.showerror("Error", "Failed to set affinity")
 
     # ---- Optimize ----
     def _optimize_tab(self):
@@ -254,6 +273,31 @@ class App(ctk.CTk):
         self.clean_box.delete("1.0", "end")
         for r in (res if isinstance(res, list) else [res]):
             self.clean_box.insert("end", r + "\n")
+
+    # ---- Config Editor ----
+    def _config_tab(self):
+        f = self.tabs.tab("Config Editor")
+        ctk.CTkLabel(f, text="Config file path:").pack(pady=5)
+        self.cfg_path = ctk.CTkEntry(f, width=600)
+        self.cfg_path.pack()
+        ctk.CTkButton(f, text="Load", command=self.load_cfg).pack(pady=5)
+        self.cfg_box = ctk.CTkTextbox(f, width=900, height=300)
+        self.cfg_box.pack(padx=10, pady=10)
+        ctk.CTkButton(f, text="Save", command=self.save_cfg).pack(pady=5)
+
+    def load_cfg(self):
+        from pathlib import Path
+        p = Path(self.cfg_path.get().strip())
+        if p.exists():
+            self.cfg_box.delete("1.0", "end")
+            self.cfg_box.insert("end", p.read_text(errors="replace"))
+
+    def save_cfg(self):
+        from pathlib import Path
+        p = Path(self.cfg_path.get().strip())
+        p.write_text(self.cfg_box.get("1.0", "end"))
+        import tkinter.messagebox as mb
+        mb.showinfo("Saved", str(p))
 
     # ---- System Tweaks ----
     def _tweaks_tab(self):
