@@ -30,7 +30,7 @@ class App(ctk.CTk):
     def _build(self):
         self.tabs = ctk.CTkTabview(self)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
-        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "System Tweaks"):
+        for name in ("Games", "Processes", "Optimize", "Monitor", "Boost PC", "System Tweaks", "Settings"):
             self.tabs.add(name)
         self._games_tab()
         self._processes_tab()
@@ -38,6 +38,7 @@ class App(ctk.CTk):
         self._monitor_tab()
         self._boost_tab()
         self._tweaks_tab()
+        self._settings_tab()
 
     # ---- Games ----
     def _games_tab(self):
@@ -183,13 +184,46 @@ class App(ctk.CTk):
 
     def boost_now(self):
         from core.process_manager import boost_pc
-        results = boost_pc()
+        from core.config import load
+        results = boost_pc(load())
         self.boost_box.delete("1.0", "end")
         for r in results:
             self.boost_box.insert("end", r + "\n")
         self.boost_box.insert("end", "\nBoost complete.\n")
         self.refresh_procs()
         self.refresh_running()
+
+    # ---- Settings ----
+    def _settings_tab(self):
+        from core.config import load, save
+        self.settings = load()
+        f = self.tabs.tab("Settings")
+        ctk.CTkLabel(f, text="Bloat processes to kill (comma-separated):").pack(pady=5)
+        self.bloat_entry = ctk.CTkEntry(f, width=600)
+        self.bloat_entry.insert(0, ", ".join(self.settings.get("bloat_processes", [])))
+        self.bloat_entry.pack()
+        self.auto_var2 = ctk.BooleanVar(value=self.settings.get("auto_boost", True))
+        ctk.CTkCheckBox(f, text="Auto boost on game launch", variable=self.auto_var2).pack(pady=5)
+        self.temp_var = ctk.BooleanVar(value=self.settings.get("boost_clear_temp", True))
+        ctk.CTkCheckBox(f, text="Clear temp files on boost", variable=self.temp_var).pack(pady=5)
+        self.work_var = ctk.BooleanVar(value=self.settings.get("boost_trim_working_sets", True))
+        ctk.CTkCheckBox(f, text="Trim working sets", variable=self.work_var).pack(pady=5)
+        self.power_var = ctk.BooleanVar(value=self.settings.get("boost_power_plan", True))
+        ctk.CTkCheckBox(f, text="Set high performance power plan", variable=self.power_var).pack(pady=5)
+        ctk.CTkButton(f, text="Save Settings", command=self.save_settings).pack(pady=10)
+
+    def save_settings(self):
+        from core.config import save
+        self.settings["bloat_processes"] = [x.strip() for x in self.bloat_entry.get().split(",") if x.strip()]
+        self.settings["auto_boost"] = self.auto_var2.get()
+        self.settings["boost_clear_temp"] = self.temp_var.get()
+        self.settings["boost_trim_working_sets"] = self.work_var.get()
+        self.settings["boost_power_plan"] = self.power_var.get()
+        save(self.settings)
+        # sync auto flag
+        self._auto = self.settings["auto_boost"]
+        import tkinter.messagebox as mb
+        mb.showinfo("Saved", "Settings saved.")
 
     # ---- System Tweaks ----
     def _tweaks_tab(self):
@@ -200,7 +234,8 @@ class App(ctk.CTk):
         self.tweaks_box.pack(padx=10, pady=10)
 
     def apply_tweaks(self):
-        results = apply_system_tweaks()
+        from core.config import load
+        results = apply_system_tweaks(load())
         self.tweaks_box.delete("1.0", "end")
         for r in results:
             self.tweaks_box.insert("end", r + "\n")

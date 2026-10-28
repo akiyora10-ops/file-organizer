@@ -77,43 +77,43 @@ def system_stats() -> dict:
     }
 
 
-def boost_pc() -> list[str]:
+def boost_pc(settings: dict | None = None) -> list[str]:
     import subprocess
+    from core.config import load
+    settings = settings or load()
     results = []
-    # Kill common bloatware
-    bloat = ["chrome.exe", "msedge.exe", "spotify.exe", "discord.exe", "skype.exe",
-             "teams.exe", "slack.exe", "onedrive.exe"]
+    bloat = settings.get("bloat_processes", [])
+    if settings.get("boost_power_plan", True):
+        try:
+            subprocess.run("powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", shell=True, check=True)
+            results.append("Power plan: High Performance")
+        except Exception as e:
+            results.append(f"Power plan failed: {e}")
     for b in bloat:
         if kill_process(b):
             results.append(f"Killed {b}")
-    # High performance power plan
-    try:
-        subprocess.run("powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", shell=True, check=True)
-        results.append("Power plan: High Performance")
-    except Exception as e:
-        results.append(f"Power plan failed: {e}")
-    # Clear working sets (best effort)
-    try:
-        subprocess.run("powershell -Command \"Get-Process | ForEach-Object { try { $_.MinWorkingSet = 1MB } catch {} }\"",
-                       shell=True, capture_output=True)
-        results.append("Trimmed working sets")
-    except Exception:
-        pass
-    # Temp cleanup
-    try:
-        import tempfile, shutil, glob
-        temp = tempfile.gettempdir()
-        removed = 0
-        for p in Path(temp).glob("*"):
-            try:
-                if p.is_file() or p.is_symlink():
-                    p.unlink()
-                elif p.is_dir():
-                    shutil.rmtree(p, ignore_errors=True)
-                removed += 1
-            except Exception:
-                pass
-        results.append(f"Cleaned temp ({removed} items)")
-    except Exception as e:
-        results.append(f"Temp cleanup failed: {e}")
+    if settings.get("boost_trim_working_sets", True):
+        try:
+            subprocess.run("powershell -Command \"Get-Process | ForEach-Object { try { $_.MinWorkingSet = 1MB } catch {} }\"",
+                           shell=True, capture_output=True)
+            results.append("Trimmed working sets")
+        except Exception:
+            pass
+    if settings.get("boost_clear_temp", True):
+        try:
+            import tempfile, shutil
+            temp = tempfile.gettempdir()
+            removed = 0
+            for p in Path(temp).glob("*"):
+                try:
+                    if p.is_file() or p.is_symlink():
+                        p.unlink()
+                    elif p.is_dir():
+                        shutil.rmtree(p, ignore_errors=True)
+                    removed += 1
+                except Exception:
+                    pass
+            results.append(f"Cleaned temp ({removed} items)")
+        except Exception as e:
+            results.append(f"Temp cleanup failed: {e}")
     return results

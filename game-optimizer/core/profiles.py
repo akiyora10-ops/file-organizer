@@ -74,15 +74,30 @@ SYSTEM_TWEAKS = [
 ]
 
 
-def apply_system_tweaks() -> list[str]:
+def apply_system_tweaks(settings: dict | None = None) -> list[str]:
     import subprocess
+    from core.config import load
+    settings = settings or load()
+    enabled = settings.get("system_tweaks", [])
     results = []
-    for label, cmd in SYSTEM_TWEAKS:
+    tweak_commands = {
+        "High performance power plan": "powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c",
+        "Disable Game DVR": 'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
+        "Disable Xbox Game Bar": 'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f',
+        "Disable fullscreen optimizations": 'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f',
+        "Disable Nagle (gaming network)": 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces" /v TcpAckFrequency /t REG_DWORD /d 1 /f',
+    }
+    for label in enabled:
+        cmd = tweak_commands.get(label)
+        if not cmd:
+            continue
         try:
             subprocess.run(cmd, shell=True, check=True, capture_output=True)
             results.append(f"OK: {label}")
         except Exception as e:
             results.append(f"FAIL: {label} ({e})")
+    if not results:
+        results.append("No tweaks selected.")
     return results
 
 GAME_PROCESSES = {
