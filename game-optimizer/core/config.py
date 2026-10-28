@@ -38,4 +38,4 @@ def load() -> dict:
 
 def save(settings: dict) -> None:
     SETTINGS_FILE.write_text(json.dumps(settings, indent=2))
-PY
+

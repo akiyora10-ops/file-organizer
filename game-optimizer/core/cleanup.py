@@ -53,4 +53,4 @@ def clean_steam_shader_cache(steam_root: str) -> list[str]:
     else:
         results.append("No Steam shader cache found.")
     return results
-PY
+

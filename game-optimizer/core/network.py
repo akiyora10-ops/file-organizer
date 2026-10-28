@@ -27,4 +27,4 @@ def ping(host: str = "8.8.8.8", count: int = 4) -> str:
         return out
     except Exception as e:
         return f"Failed: {e}"
-PY
+
